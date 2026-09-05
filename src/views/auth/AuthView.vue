@@ -2,25 +2,25 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from '@/composables/auth/useLogin'
+import { useRegister } from '@/composables/auth/useRegister'
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 
 const router = useRouter()
-const { login, loading, error: loginError } = useLogin()
+const { login, loading: loginLoading, error: loginError } = useLogin()
+const { register, loading: registerLoading, error: registerError } = useRegister()
 const { currentUser } = useCurrentUser()
 
 // Controls which form is shown
 const activeTab = ref('login')
 
-// Show/hide password toggle
+// Separate show/hide toggles for each password field
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
-// Sign In form fields
+// ── Sign In ──
 const loginForm = reactive({ email: '', password: '' })
-
-// Inline field errors — shown under each input
 const loginErrors = reactive({ email: '', password: '' })
 
-// Validates the sign in form — returns true if valid
 function validateLogin() {
   let valid = true
   loginErrors.email = ''
@@ -47,12 +47,69 @@ function validateLogin() {
 
 async function handleLogin() {
   if (!validateLogin()) return
-
   const result = await login(loginForm.email, loginForm.password)
-
   if (result.success) {
-    // Redirect based on role
     router.push(currentUser.value?.role === 'admin' ? '/admin/users' : '/weather')
+  }
+}
+
+// ── Sign Up ──
+const registerForm = reactive({ name: '', age: '', email: '', password: '', confirmPassword: '' })
+const registerErrors = reactive({ name: '', age: '', email: '', password: '', confirmPassword: '' })
+
+function validateRegister() {
+  let valid = true
+  Object.keys(registerErrors).forEach(k => registerErrors[k] = '')
+
+  if (!registerForm.name.trim()) {
+    registerErrors.name = 'Full name is required.'
+    valid = false
+  } else if (registerForm.name.trim().length < 2) {
+    registerErrors.name = 'Name must be at least 2 characters.'
+    valid = false
+  }
+
+  const age = Number(registerForm.age)
+  if (!registerForm.age) {
+    registerErrors.age = 'Age is required.'
+    valid = false
+  } else if (!Number.isInteger(age) || age < 1 || age > 120) {
+    registerErrors.age = 'Please enter a valid age between 1 and 120.'
+    valid = false
+  }
+
+  if (!registerForm.email) {
+    registerErrors.email = 'Email is required.'
+    valid = false
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email)) {
+    registerErrors.email = 'Please enter a valid email address.'
+    valid = false
+  }
+
+  if (!registerForm.password) {
+    registerErrors.password = 'Password is required.'
+    valid = false
+  } else if (registerForm.password.length < 8) {
+    registerErrors.password = 'Password must be at least 8 characters.'
+    valid = false
+  }
+
+  if (!registerForm.confirmPassword) {
+    registerErrors.confirmPassword = 'Please confirm your password.'
+    valid = false
+  } else if (registerForm.password !== registerForm.confirmPassword) {
+    registerErrors.confirmPassword = 'Passwords do not match.'
+    valid = false
+  }
+
+  return valid
+}
+
+async function handleRegister() {
+  if (!validateRegister()) return
+  const result = await register(registerForm.name, registerForm.age, registerForm.email, registerForm.password)
+  if (result.success) {
+    router.push('/weather')
   }
 }
 </script>
@@ -164,18 +221,130 @@ async function handleLogin() {
         <!-- Submit button -->
         <button
           type="submit"
-          :disabled="loading"
+          :disabled="loginLoading"
           class="w-full bg-brand hover:bg-brand/90 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
-          {{ loading ? 'Signing in...' : 'Sign In' }}
+          {{ loginLoading ? 'Signing in...' : 'Sign In' }}
         </button>
 
       </form>
 
-      <!-- Sign Up form placeholder — coming next -->
-      <div v-if="activeTab === 'register'">
-        <p class="text-text-muted text-sm text-center">Sign Up form coming soon</p>
-      </div>
+      <!-- ── Sign Up Form ── -->
+      <form v-if="activeTab === 'register'" @submit.prevent="handleRegister" class="flex flex-col gap-4" novalidate>
+
+        <!-- Full name + Age on same row on larger screens -->
+        <div class="flex flex-col sm:flex-row gap-4">
+
+          <div class="flex flex-col gap-1 flex-1">
+            <label class="text-text-muted text-sm">Full Name</label>
+            <input
+              v-model="registerForm.name"
+              type="text"
+              placeholder="Alex Rawles"
+              class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              :class="registerErrors.name ? 'ring-2 ring-status-suspended-text' : ''"
+            />
+            <p v-if="registerErrors.name" class="text-status-suspended-text text-xs mt-0.5">
+              {{ registerErrors.name }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-1 w-full sm:w-24">
+            <label class="text-text-muted text-sm">Age</label>
+            <input
+              v-model="registerForm.age"
+              type="number"
+              placeholder="25"
+              min="1"
+              max="120"
+              class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              :class="registerErrors.age ? 'ring-2 ring-status-suspended-text' : ''"
+            />
+            <p v-if="registerErrors.age" class="text-status-suspended-text text-xs mt-0.5">
+              {{ registerErrors.age }}
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Email -->
+        <div class="flex flex-col gap-1">
+          <label class="text-text-muted text-sm">Email Address</label>
+          <input
+            v-model="registerForm.email"
+            type="email"
+            placeholder="your@email.com"
+            class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+            :class="registerErrors.email ? 'ring-2 ring-status-suspended-text' : ''"
+          />
+          <p v-if="registerErrors.email" class="text-status-suspended-text text-xs mt-0.5">
+            {{ registerErrors.email }}
+          </p>
+        </div>
+
+        <!-- Password -->
+        <div class="flex flex-col gap-1">
+          <label class="text-text-muted text-sm">Password</label>
+          <div class="relative">
+            <input
+              v-model="registerForm.password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              :class="registerErrors.password ? 'ring-2 ring-status-suspended-text' : ''"
+            />
+            <button
+              type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              @click="showPassword = !showPassword"
+            >
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <p v-if="registerErrors.password" class="text-status-suspended-text text-xs mt-0.5">
+            {{ registerErrors.password }}
+          </p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="flex flex-col gap-1">
+          <label class="text-text-muted text-sm">Confirm Password</label>
+          <div class="relative">
+            <input
+              v-model="registerForm.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="••••••••"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              :class="registerErrors.confirmPassword ? 'ring-2 ring-status-suspended-text' : ''"
+            />
+            <button
+              type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              {{ showConfirmPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <p v-if="registerErrors.confirmPassword" class="text-status-suspended-text text-xs mt-0.5">
+            {{ registerErrors.confirmPassword }}
+          </p>
+        </div>
+
+        <!-- Server error from Appwrite -->
+        <p v-if="registerError" class="text-status-suspended-text text-sm text-center">
+          {{ registerError }}
+        </p>
+
+        <!-- Submit button -->
+        <button
+          type="submit"
+          :disabled="registerLoading"
+          class="w-full bg-brand hover:bg-brand/90 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {{ registerLoading ? 'Creating account...' : 'Create Account' }}
+        </button>
+
+      </form>
 
     </div>
   </div>

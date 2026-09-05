@@ -17,8 +17,12 @@ export function useRegister() {
       // Step 1: Create the Appwrite Auth account (handles email + password only)
       const authUser = await account.create(ID.unique(), email, password, name)
 
-      // Step 2: Create the matching document in the users table with app-specific data
-      // Permissions ensure only this user and admins can read/update this document
+      // Step 2: Log in immediately so there is an active session
+      // The document creation below requires authentication to pass permissions
+      await login(email, password)
+
+      // Step 3: Create the matching document in the users table with app-specific data
+      // Now that we have a session, the users collection permissions allow this
       await databases.createDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
@@ -35,12 +39,8 @@ export function useRegister() {
           // Only this specific user can read and update their own document
           Permission.read(Role.user(authUser.$id)),
           Permission.update(Role.user(authUser.$id)),
-          // Admins (label:admin) have full access via collection-level permissions
         ]
       )
-
-      // Step 3: Automatically log in after successful registration
-      await login(email, password)
 
       return { success: true }
     } catch (err) {
