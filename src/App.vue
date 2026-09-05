@@ -1,11 +1,23 @@
-<script setup></script>
+<script setup>
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCurrentUser } from '@/composables/auth/useCurrentUser'
+
+const router = useRouter()
+const { currentUser, fetchCurrentUser } = useCurrentUser()
+
+// On every page load, check if an Appwrite session already exists
+// and populate currentUser before the router guard runs
+onMounted(async () => {
+  await fetchCurrentUser()
+
+  // After we know the user's state, trigger the router to re-evaluate the current route
+  // This ensures the guard runs with the correct currentUser value
+  router.replace(router.currentRoute.value.fullPath)
+})
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <!-- RouterView renders whichever view matches the current URL -->
+  <RouterView />
 </template>
-
-<style scoped></style>
