@@ -14,7 +14,8 @@ export function useLogin() {
     error.value = null
 
     try {
-      // Create an Appwrite auth session with email and password
+      // Clear any leftover session before creating a fresh one
+      try { await account.deleteSession('current') } catch { /* no session — fine */ }
       await account.createEmailPasswordSession(email, password)
 
       // Load the user's profile into the shared currentUser ref
