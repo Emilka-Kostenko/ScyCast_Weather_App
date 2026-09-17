@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import WeatherHero from '@/components/weather/WeatherHero.vue'
 import HourlyForecast from '@/components/weather/HourlyForecast.vue'
 import TenDayForecast from '@/components/weather/TenDayForecast.vue'
+import UvIndexCard from '@/components/weather/UvIndexCard.vue'
 import { useWeather } from '@/composables/weather/useWeather'
 
 const { weather, loading, error, fetchWeather } = useWeather()
@@ -30,6 +31,7 @@ onMounted(() => {
       <div class="flex flex-col gap-4 flex-1">
         <HourlyForecast :weather="weather" />
         <TenDayForecast :weather="weather" />
+        <UvIndexCard :weather="weather" />
       </div>
     </div>
 
