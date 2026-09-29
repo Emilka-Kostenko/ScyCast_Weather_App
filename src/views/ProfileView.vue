@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 import { useLogout } from '@/composables/auth/useLogout'
 import { useLocations } from '@/composables/locations/useLocations'
+import { useUsers } from '@/composables/admin/useUsers'
 import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -11,6 +12,7 @@ const router = useRouter()
 const { currentUser, isAdmin } = useCurrentUser()
 const { logout } = useLogout()
 const { locations, fetchLocations } = useLocations()
+const { users, loading: usersLoading, fetchUsers } = useUsers()
 
 // Load saved locations once the current user is available
 onMounted(() => {
@@ -20,9 +22,11 @@ onMounted(() => {
 // Active tab — 'profile' for everyone, 'users' only for admins
 const activeTab = ref('profile')
 
+// Lazy-load users the first time the Users tab is opened
 function switchTab(tab) {
   if (tab === 'users' && !isAdmin.value) return
   activeTab.value = tab
+  if (tab === 'users' && users.value.length === 0) fetchUsers()
 }
 
 // Controls the saved locations dropdown visibility
@@ -276,9 +280,90 @@ async function handleLogout() {
         </div>
       </div>
 
-      <!-- ── USERS TAB placeholder ── -->
-      <div v-else-if="activeTab === 'users'" class="flex-1 p-6">
-        <p class="text-text-muted text-sm">Users dashboard coming soon...</p>
+      <!-- ── USERS TAB ── -->
+      <div v-else-if="activeTab === 'users'" class="flex-1 overflow-y-auto p-6">
+
+        <!-- Loading state -->
+        <div v-if="usersLoading" class="flex items-center justify-center h-40">
+          <p class="text-text-muted text-sm">Loading users...</p>
+        </div>
+
+        <!-- Users table -->
+        <div v-else class="bg-bg-surface border border-white/5 rounded-2xl overflow-hidden">
+          <table class="w-full text-sm">
+
+            <!-- Table header -->
+            <thead>
+              <tr class="border-b border-white/5">
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">User</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Email</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Role</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Status</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Actions</th>
+              </tr>
+            </thead>
+
+            <!-- Table body -->
+            <tbody>
+              <tr
+                v-for="user in users"
+                :key="user.$id"
+                class="border-b border-white/5 last:border-0 hover:bg-bg-raised transition-colors"
+              >
+                <!-- Avatar initial + name -->
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-brand/20 rounded-full flex items-center justify-center shrink-0">
+                      <span class="text-brand text-xs font-bold">
+                        {{ user.name?.charAt(0).toUpperCase() || '?' }}
+                      </span>
+                    </div>
+                    <span class="text-text-primary font-medium">{{ user.name }}</span>
+                  </div>
+                </td>
+
+                <!-- Email -->
+                <td class="px-5 py-4 text-text-muted">{{ user.email }}</td>
+
+                <!-- Role badge -->
+                <td class="px-5 py-4">
+                  <span
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                    :class="user.role === 'admin' ? 'bg-brand/15 text-brand' : 'bg-white/5 text-text-muted'"
+                  >
+                    {{ user.role }}
+                  </span>
+                </td>
+
+                <!-- Status badge -->
+                <td class="px-5 py-4">
+                  <span
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold"
+                    :class="user.status === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'"
+                  >
+                    {{ user.status }}
+                  </span>
+                </td>
+
+                <!-- Action buttons — wired up in later steps -->
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-2">
+                    <button class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors">
+                      Edit
+                    </button>
+                    <button class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors">
+                      {{ user.status === 'active' ? 'Disable' : 'Enable' }}
+                    </button>
+                    <button class="text-red-400 hover:text-red-300 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition-colors">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+        </div>
       </div>
 
     </div>
