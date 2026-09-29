@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 import { useLogout } from '@/composables/auth/useLogout'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
 
 const router = useRouter()
 const { currentUser } = useCurrentUser()
@@ -27,34 +28,7 @@ async function handleLogout() {
 <template>
   <div class="min-h-screen bg-bg-base flex">
 
-    <!-- ── Sidebar ── -->
-    <aside class="w-16 bg-bg-surface border-r border-white/5 flex flex-col items-center py-6 shrink-0">
-      <!-- Cloud logo -->
-      <div class="w-9 h-9 bg-brand rounded-xl flex items-center justify-center mb-4 shrink-0">
-        <span class="text-white text-base">☁</span>
-      </div>
-
-      <!-- Nav buttons -->
-      <div class="flex flex-col gap-1 flex-1">
-        <!-- Weather dashboard -->
-        <button
-          @click="router.push('/weather')"
-          class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:bg-white/5 transition-colors"
-        >
-          <span class="text-lg">⊞</span>
-        </button>
-
-        <!-- Profile (active) -->
-        <button class="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-subtle border border-brand/30 text-brand">
-          <span class="text-lg">◉</span>
-        </button>
-      </div>
-
-      <!-- Settings at the bottom -->
-      <button class="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:bg-white/5 transition-colors shrink-0">
-        <span class="text-lg">⚙</span>
-      </button>
-    </aside>
+    <AppSidebar />
 
     <!-- ── Main content ── -->
     <div class="flex flex-col flex-1 min-w-0">

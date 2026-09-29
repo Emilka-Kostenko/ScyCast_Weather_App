@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
 import WeatherHero from '@/components/weather/WeatherHero.vue'
 import HourlyForecast from '@/components/weather/HourlyForecast.vue'
 import TenDayForecast from '@/components/weather/TenDayForecast.vue'
@@ -51,12 +52,18 @@ onMounted(loadLocations)
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg-base flex items-center justify-center">
+  <div class="min-h-screen bg-bg-base flex">
 
-    <p v-if="loading" class="text-text-muted">Loading weather...</p>
-    <p v-else-if="error" class="text-status-suspended-text">{{ error }}</p>
+    <AppSidebar />
 
-    <div v-else-if="weather" class="flex gap-4 p-6 h-screen">
+    <!-- Loading / error states -->
+    <div v-if="loading || error" class="flex flex-1 items-center justify-center">
+      <p v-if="loading" class="text-text-muted">Loading weather...</p>
+      <p v-else-if="error" class="text-status-suspended-text">{{ error }}</p>
+    </div>
+
+    <!-- Weather content -->
+    <div v-else-if="weather" class="flex gap-4 p-6 h-screen flex-1">
 
       <!-- Left panel — hero with LocationDropdown injected into the location slot -->
       <div class="h-full w-[436px] rounded-2xl overflow-hidden shrink-0">
@@ -87,3 +94,4 @@ onMounted(loadLocations)
 
   </div>
 </template>
+
