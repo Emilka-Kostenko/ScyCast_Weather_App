@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGeocoding } from '@/composables/geocoding/useGeocoding'
 import { useAddLocation } from '@/composables/locations/useAddLocation'
 import { useRemoveLocation } from '@/composables/locations/useRemoveLocation'
-import { getCityCoords } from '@/services/geocodingApi'
 
 const props = defineProps({
   activeLocation: Object, // { name, lat, lon } — currently viewed location
@@ -45,10 +44,9 @@ function close() {
   clearResults()
 }
 
-// Pick from search results — fetches coords first (autocomplete gives no coords), then emits select
-async function selectCity(city) {
-  const coords = await getCityCoords(city.stedId)
-  emit('select', { name: city.name, lat: coords.lat, lon: coords.lon })
+// Pick from search results — coords come directly from Open-Meteo geocoding
+function selectCity(city) {
+  emit('select', { name: city.name, lat: city.lat, lon: city.lon })
   close()
 }
 

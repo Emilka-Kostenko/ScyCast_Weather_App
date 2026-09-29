@@ -41,7 +41,7 @@ function degreesToLabel(deg) {
         <div>
           <p class="text-text-primary font-bold leading-none">
             <span class="text-3xl">{{ wind?.speed ?? '--' }}</span>
-            <span class="text-text-muted text-base font-normal ml-1">MPH</span>
+            <span class="text-text-muted text-base font-normal ml-1">M/S</span>
           </p>
           <p class="text-text-muted text-xs mt-1">Wind</p>
         </div>
@@ -52,7 +52,7 @@ function degreesToLabel(deg) {
         <div>
           <p class="text-text-primary font-bold leading-none">
             <span class="text-3xl">{{ wind?.gusts ?? '--' }}</span>
-            <span class="text-text-muted text-base font-normal ml-1">MPH</span>
+            <span class="text-text-muted text-base font-normal ml-1">M/S</span>
           </p>
           <p class="text-text-muted text-xs mt-1">Gusts</p>
         </div>

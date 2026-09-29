@@ -3,10 +3,17 @@
 
 const CONDITIONS = [
   {
-    codes: [0, 1, 2, 3],
+    codes: [0, 1],
     label: 'Clear Sky',
     description: 'Enjoy the beautiful clear skies today. With plenty of sunshine and light clouds drifting by, it\'s a perfect day to spend time outdoors, take a long walk, or finally tackle any activity you\'ve been putting off.',
     background: '/weather/clear.jpg',
+  },
+  {
+    // WMO 2 = partly cloudy, 3 = overcast — these are NOT clear sky
+    codes: [2, 3],
+    label: 'Cloudy',
+    description: 'Clouds are dominating the sky today, keeping things cool and grey. A light jacket is a good idea. While the sun may break through at times, don\'t count on it — a comfortable day to stay in or head out for a calm, overcast walk.',
+    background: '/weather/cloudy.jpg',
   },
   {
     codes: [45, 48, 51, 53, 55, 61, 63, 65, 80, 81, 82],

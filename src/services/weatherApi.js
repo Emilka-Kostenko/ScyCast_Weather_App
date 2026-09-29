@@ -35,7 +35,7 @@ export async function fetchWeatherData(lat, lon) {
     ].join(','),
 
     forecast_days: 10,
-    wind_speed_unit: 'mph',
+    wind_speed_unit: 'ms', // metres per second
     timezone: 'auto', // uses the timezone of the requested location
   })
 

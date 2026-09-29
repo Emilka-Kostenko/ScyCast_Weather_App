@@ -14,8 +14,8 @@ export function useGeocoding() {
     clearTimeout(debounceTimer)
     error.value = null
 
-    // Clear results immediately when the input is empty
-    if (!query.trim()) {
+    // Wait for at least 2 characters before searching
+    if (query.trim().length < 2) {
       results.value = []
       return
     }
