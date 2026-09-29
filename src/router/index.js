@@ -35,9 +35,7 @@ const router = createRouter({
     },
     {
       path: '/admin/users',
-      name: 'admin-users',
-      component: () => import('@/views/admin/UsersView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true },
+      redirect: '/profile',
     },
   ],
 })
@@ -54,7 +52,7 @@ router.beforeEach((to) => {
 
   // If logged in and trying to reach the login page → redirect based on role
   if (to.meta.public && user) {
-    return user.role === 'admin' ? { name: 'admin-users' } : { name: 'weather' }
+    return user.role === 'admin' ? { name: 'profile' } : { name: 'weather' }
   }
 
   // If suspended user tries to go anywhere except /suspended → block them
@@ -64,7 +62,7 @@ router.beforeEach((to) => {
 
   // If active user or admin tries to access /suspended → send them home
   if (user && user.status === 'active' && to.name === 'suspended') {
-    return user.role === 'admin' ? { name: 'admin-users' } : { name: 'weather' }
+    return user.role === 'admin' ? { name: 'profile' } : { name: 'weather' }
   }
 
   // If a non-admin tries to reach an admin route → redirect to weather
