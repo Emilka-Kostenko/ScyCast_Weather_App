@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 import { useLogout } from '@/composables/auth/useLogout'
 import { useLocations } from '@/composables/locations/useLocations'
 import { useUsers } from '@/composables/admin/useUsers'
+import { useUpdateUser } from '@/composables/admin/useUpdateUser'
 import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -13,6 +14,7 @@ const { currentUser, isAdmin } = useCurrentUser()
 const { logout } = useLogout()
 const { locations, fetchLocations } = useLocations()
 const { users, loading: usersLoading, fetchUsers } = useUsers()
+const { updateUser } = useUpdateUser()
 
 // Load saved locations once the current user is available
 onMounted(() => {
@@ -297,6 +299,7 @@ async function handleLogout() {
               <tr class="border-b border-white/5">
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">User</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Email</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Age</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Role</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Status</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Actions</th>
@@ -325,7 +328,10 @@ async function handleLogout() {
                 <!-- Email -->
                 <td class="px-5 py-4 text-text-muted">{{ user.email }}</td>
 
-                <!-- Role badge -->
+                <!-- Age -->
+                <td class="px-5 py-4 text-text-muted">{{ user.age ?? '—' }}</td>
+
+                <!-- Role badge (read-only — change via Edit modal) -->
                 <td class="px-5 py-4">
                   <span
                     class="px-2.5 py-1 rounded-lg text-xs font-semibold"
