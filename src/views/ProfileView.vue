@@ -20,13 +20,43 @@ const { deleteUser } = useDeleteUser()
 
 // Search query — filters the users table by name or email
 const searchQuery = ref('')
+
+// Sort state — which column and which direction
+const sortKey = ref(null)   // 'role' | 'status' | null
+const sortAsc = ref(true)
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
 const filteredUsers = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return users.value
-  return users.value.filter(u =>
-    u.name?.toLowerCase().includes(q) ||
-    u.email?.toLowerCase().includes(q)
-  )
+
+  // Filter first
+  let result = q
+    ? users.value.filter(u =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q)
+      )
+    : [...users.value]
+
+  // Then sort if a column is active
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      const valA = (a[sortKey.value] || '').toLowerCase()
+      const valB = (b[sortKey.value] || '').toLowerCase()
+      if (valA < valB) return sortAsc.value ? -1 : 1
+      if (valA > valB) return sortAsc.value ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
 })
 
 // Holds the $id of the user awaiting delete confirmation, null otherwise
@@ -359,8 +389,18 @@ async function handleLogout() {
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">User</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Email</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Age</th>
-                <th class="text-left text-text-muted font-medium px-5 py-3.5">Role</th>
-                <th class="text-left text-text-muted font-medium px-5 py-3.5">Status</th>
+                <th class="px-5 py-3.5">
+                  <button @click="toggleSort('role')" class="flex items-center gap-1 text-text-muted font-medium text-sm hover:text-text-primary transition-colors">
+                    Role
+                    <span class="text-xs opacity-60">{{ sortKey === 'role' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+                  </button>
+                </th>
+                <th class="px-5 py-3.5">
+                  <button @click="toggleSort('status')" class="flex items-center gap-1 text-text-muted font-medium text-sm hover:text-text-primary transition-colors">
+                    Status
+                    <span class="text-xs opacity-60">{{ sortKey === 'status' ? (sortAsc ? '↑' : '↓') : '↕' }}</span>
+                  </button>
+                </th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Actions</th>
               </tr>
             </thead>
