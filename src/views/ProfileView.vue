@@ -6,6 +6,7 @@ import { useLogout } from '@/composables/auth/useLogout'
 import { useLocations } from '@/composables/locations/useLocations'
 import { useUsers } from '@/composables/admin/useUsers'
 import { useUpdateUser } from '@/composables/admin/useUpdateUser'
+import { useDeleteUser } from '@/composables/admin/useDeleteUser'
 import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -15,6 +16,24 @@ const { logout } = useLogout()
 const { locations, fetchLocations } = useLocations()
 const { users, loading: usersLoading, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
+const { deleteUser } = useDeleteUser()
+
+// Holds the $id of the user awaiting delete confirmation, null otherwise
+const confirmDeleteId = ref(null)
+
+// On first click — enters confirmation state for that row
+function handleDelete(user) {
+  confirmDeleteId.value = user.$id
+}
+
+// On confirm — deletes from Appwrite and removes from local list
+async function confirmDelete(user) {
+  const ok = await deleteUser(user.$id)
+  if (ok) {
+    users.value = users.value.filter(u => u.$id !== user.$id)
+  }
+  confirmDeleteId.value = null
+}
 
 // Toggles a user between active and suspended
 // Blocks the action if it would leave the system with zero active admins
@@ -384,7 +403,27 @@ async function handleLogout() {
                     >
                       {{ user.status === 'active' ? 'Disable' : 'Enable' }}
                     </button>
-                    <button class="text-red-400 hover:text-red-300 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition-colors">
+                    <!-- Inline delete confirmation -->
+                    <template v-if="confirmDeleteId === user.$id">
+                      <span class="text-text-muted text-xs">Sure?</span>
+                      <button
+                        @click="confirmDelete(user)"
+                        class="text-red-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition-colors"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        @click="confirmDeleteId = null"
+                        class="text-text-muted text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors"
+                      >
+                        No
+                      </button>
+                    </template>
+                    <button
+                      v-else
+                      @click="handleDelete(user)"
+                      class="text-red-400 hover:text-red-300 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition-colors"
+                    >
                       Delete
                     </button>
                   </div>
