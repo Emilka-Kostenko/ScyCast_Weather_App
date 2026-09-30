@@ -16,6 +16,24 @@ const { locations, fetchLocations } = useLocations()
 const { users, loading: usersLoading, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
 
+// Toggles a user between active and suspended
+// Blocks the action if it would leave the system with zero active admins
+async function handleStatusToggle(user) {
+  const newStatus = user.status === 'active' ? 'suspended' : 'active'
+
+  // Guard: prevent suspending the last active admin
+  if (newStatus === 'suspended' && user.role === 'admin') {
+    const activeAdmins = users.value.filter(u => u.role === 'admin' && u.status === 'active')
+    if (activeAdmins.length <= 1) {
+      alert('Cannot suspend the last active admin — the admin panel would become inaccessible.')
+      return
+    }
+  }
+
+  const ok = await updateUser(user.$id, { status: newStatus })
+  if (ok) user.status = newStatus
+}
+
 // Load saved locations once the current user is available
 onMounted(() => {
   if (currentUser.value?.userId) fetchLocations(currentUser.value.userId)
@@ -357,7 +375,13 @@ async function handleLogout() {
                     <button class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors">
                       Edit
                     </button>
-                    <button class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors">
+                    <button
+                      @click="handleStatusToggle(user)"
+                      class="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                      :class="user.status === 'active'
+                        ? 'text-red-400 border-red-500/20 hover:bg-red-500/10'
+                        : 'text-green-400 border-green-500/20 hover:bg-green-500/10'"
+                    >
                       {{ user.status === 'active' ? 'Disable' : 'Enable' }}
                     </button>
                     <button class="text-red-400 hover:text-red-300 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition-colors">
