@@ -18,6 +18,17 @@ const { users, loading: usersLoading, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
 const { deleteUser } = useDeleteUser()
 
+// Search query — filters the users table by name or email
+const searchQuery = ref('')
+const filteredUsers = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return users.value
+  return users.value.filter(u =>
+    u.name?.toLowerCase().includes(q) ||
+    u.email?.toLowerCase().includes(q)
+  )
+})
+
 // Holds the $id of the user awaiting delete confirmation, null otherwise
 const confirmDeleteId = ref(null)
 
@@ -322,6 +333,17 @@ async function handleLogout() {
       <!-- ── USERS TAB ── -->
       <div v-else-if="activeTab === 'users'" class="flex-1 overflow-y-auto p-6">
 
+        <!-- Search bar -->
+        <div class="mb-4 relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search by name or email..."
+            class="w-full bg-bg-surface border border-white/5 rounded-xl pl-10 pr-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+          />
+        </div>
+
         <!-- Loading state -->
         <div v-if="usersLoading" class="flex items-center justify-center h-40">
           <p class="text-text-muted text-sm">Loading users...</p>
@@ -346,7 +368,7 @@ async function handleLogout() {
             <!-- Table body -->
             <tbody>
               <tr
-                v-for="user in users"
+                v-for="user in filteredUsers"
                 :key="user.$id"
                 class="border-b border-white/5 last:border-0 hover:bg-bg-raised transition-colors"
               >
@@ -429,6 +451,13 @@ async function handleLogout() {
                   </div>
                 </td>
               </tr>
+              <!-- No results row -->
+              <tr v-if="filteredUsers.length === 0">
+                <td colspan="6" class="px-5 py-10 text-center text-text-muted text-sm">
+                  No users match "{{ searchQuery }}"
+                </td>
+              </tr>
+
             </tbody>
 
           </table>
