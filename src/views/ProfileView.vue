@@ -63,7 +63,12 @@ const filteredUsers = computed(() => {
 const confirmDeleteId = ref(null)
 
 // On first click — enters confirmation state for that row
+// Blocks deletion of any admin — demote to user first via Edit modal
 function handleDelete(user) {
+  if (user.role === 'admin') {
+    alert('Admin users cannot be deleted. Change their role to user first.')
+    return
+  }
   confirmDeleteId.value = user.$id
 }
 
