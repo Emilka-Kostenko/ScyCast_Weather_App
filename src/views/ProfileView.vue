@@ -388,6 +388,7 @@ async function handleLogout() {
               <tr class="border-b border-white/5">
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">User</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Email</th>
+                <th class="text-left text-text-muted font-medium px-5 py-3.5">Last Login</th>
                 <th class="text-left text-text-muted font-medium px-5 py-3.5">Age</th>
                 <th class="px-5 py-3.5">
                   <button @click="toggleSort('role')" class="flex items-center gap-1 text-text-muted font-medium text-sm hover:text-text-primary transition-colors">
@@ -426,6 +427,11 @@ async function handleLogout() {
 
                 <!-- Email -->
                 <td class="px-5 py-4 text-text-muted">{{ user.email }}</td>
+
+                <!-- Last login — formatted as date + time, or — if never logged in -->
+                <td class="px-5 py-4 text-text-muted text-xs">
+                  {{ user.lastLogin ? new Date(user.lastLogin).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' }}
+                </td>
 
                 <!-- Age -->
                 <td class="px-5 py-4 text-text-muted">{{ user.age ?? '—' }}</td>
@@ -493,7 +499,7 @@ async function handleLogout() {
               </tr>
               <!-- No results row -->
               <tr v-if="filteredUsers.length === 0">
-                <td colspan="6" class="px-5 py-10 text-center text-text-muted text-sm">
+                <td colspan="7" class="px-5 py-10 text-center text-text-muted text-sm">
                   No users match "{{ searchQuery }}"
                 </td>
               </tr>
