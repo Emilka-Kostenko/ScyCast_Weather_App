@@ -16,6 +16,14 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      // Opened from the password-recovery email. No meta on purpose: it must NOT be
+      // 'public' (that would bounce logged-in users away) and must NOT require auth
+      // (the user can't log in — that's why they're resetting the password)
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('@/views/auth/ResetPasswordView.vue'),
+    },
+    {
       path: '/weather',
       name: 'weather',
       component: () => import('@/views/WeatherView.vue'),
