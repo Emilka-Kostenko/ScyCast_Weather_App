@@ -16,7 +16,8 @@ export function useResetPassword() {
     } catch (err) {
       console.error('Reset password error:', err)
       // 401 = the link is expired (valid for 1 hour) or was already used
-      if (err.code === 401) {
+      // 404 = the userId in the link doesn't exist (edited or broken link)
+      if (err.code === 401 || err.code === 404) {
         error.value = 'This reset link is invalid or has expired. Please request a new one.'
       } else if (err.code === 400) {
         // Appwrite's own message explains what is wrong with the password
