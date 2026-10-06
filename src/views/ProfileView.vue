@@ -233,10 +233,17 @@ const accountForm = ref({ email: '', currentPassword: '', newPassword: '', confi
 const accountFormError = ref('')
 // Green confirmation shown in the profile card after a successful change
 const accountSuccess = ref('')
+// Show/hide toggles for the three password fields in the modal
+const showCurrentPw = ref(false)
+const showNewPw = ref(false)
+const showConfirmPw = ref(false)
 
 function openAccountModal(type) {
   accountModal.value = type
   accountForm.value = { email: '', currentPassword: '', newPassword: '', confirmPassword: '' }
+  showCurrentPw.value = false
+  showNewPw.value = false
+  showConfirmPw.value = false
   accountFormError.value = ''
   accountError.value = null
   accountSuccess.value = ''
@@ -723,33 +730,60 @@ async function handleLogout() {
           <!-- Current password — required by Appwrite for both changes -->
           <div class="flex flex-col gap-1.5">
             <label class="text-text-muted text-sm font-medium">Current Password</label>
-            <input
-              v-model="accountForm.currentPassword"
-              type="password"
-              placeholder="••••••••"
-              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
-            />
+            <div class="relative">
+              <input
+                v-model="accountForm.currentPassword"
+                :type="showCurrentPw ? 'text' : 'password'"
+                placeholder="••••••••"
+                class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+              />
+              <button
+                type="button"
+                @click="showCurrentPw = !showCurrentPw"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              >
+                {{ showCurrentPw ? 'Hide' : 'Show' }}
+              </button>
+            </div>
           </div>
 
           <!-- New password + confirmation (password mode only) -->
           <template v-if="accountModal === 'password'">
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">New Password</label>
-              <input
-                v-model="accountForm.newPassword"
-                type="password"
-                placeholder="••••••••"
-                class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
-              />
+              <div class="relative">
+                <input
+                  v-model="accountForm.newPassword"
+                  :type="showNewPw ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+                />
+                <button
+                  type="button"
+                  @click="showNewPw = !showNewPw"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+                >
+                  {{ showNewPw ? 'Hide' : 'Show' }}
+                </button>
+              </div>
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">Confirm New Password</label>
-              <input
-                v-model="accountForm.confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
-              />
+              <div class="relative">
+                <input
+                  v-model="accountForm.confirmPassword"
+                  :type="showConfirmPw ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+                />
+                <button
+                  type="button"
+                  @click="showConfirmPw = !showConfirmPw"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+                >
+                  {{ showConfirmPw ? 'Hide' : 'Show' }}
+                </button>
+              </div>
             </div>
           </template>
 
