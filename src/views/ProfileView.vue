@@ -7,6 +7,7 @@ import { useLocations } from '@/composables/locations/useLocations'
 import { useUsers } from '@/composables/admin/useUsers'
 import { useUpdateUser } from '@/composables/admin/useUpdateUser'
 import { useDeleteUser } from '@/composables/admin/useDeleteUser'
+import { useUpdateAccount } from '@/composables/auth/useUpdateAccount'
 import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
@@ -17,6 +18,7 @@ const { locations, fetchLocations } = useLocations()
 const { users, loading: usersLoading, error: usersError, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
 const { deleteUser } = useDeleteUser()
+const { changePassword, changeEmail, loading: accountLoading, error: accountError } = useUpdateAccount()
 
 // Search query — filters the users table by name or email
 const searchQuery = ref('')
@@ -224,6 +226,67 @@ async function saveProfile() {
   }
 }
 
+// ── Account security (own email / password) ──
+// Which modal is open: 'email' | 'password' | null
+const accountModal = ref(null)
+const accountForm = ref({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' })
+const accountFormError = ref('')
+// Green confirmation shown in the profile card after a successful change
+const accountSuccess = ref('')
+
+function openAccountModal(type) {
+  accountModal.value = type
+  accountForm.value = { email: '', currentPassword: '', newPassword: '', confirmPassword: '' }
+  accountFormError.value = ''
+  accountError.value = null
+  accountSuccess.value = ''
+}
+
+function closeAccountModal() {
+  accountModal.value = null
+}
+
+// Validates the form, then changes the email or password of the logged-in user
+async function submitAccountChange() {
+  accountFormError.value = ''
+  const f = accountForm.value
+  let ok = false
+
+  if (accountModal.value === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
+      accountFormError.value = 'Please enter a valid email address.'
+      return
+    }
+    if (f.email === currentUser.value?.email) {
+      accountFormError.value = 'This is already your email.'
+      return
+    }
+    if (!f.currentPassword) {
+      accountFormError.value = 'Enter your current password to confirm.'
+      return
+    }
+    ok = await changeEmail(f.email, f.currentPassword)
+    if (ok) accountSuccess.value = 'Email updated. Use the new email next time you sign in.'
+  } else {
+    if (!f.currentPassword) {
+      accountFormError.value = 'Enter your current password.'
+      return
+    }
+    if (f.newPassword.length < 8) {
+      accountFormError.value = 'New password must be at least 8 characters.'
+      return
+    }
+    if (f.newPassword !== f.confirmPassword) {
+      accountFormError.value = 'Passwords do not match.'
+      return
+    }
+    ok = await changePassword(f.currentPassword, f.newPassword)
+    if (ok) accountSuccess.value = 'Password updated.'
+  }
+
+  if (ok) closeAccountModal()
+}
+
 // Formatted date shown in the header
 const today = computed(() =>
   new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
@@ -372,21 +435,41 @@ async function handleLogout() {
               </div>
             </div>
 
-            <!-- Email — read-only, auth email cannot be changed here -->
+            <!-- Email — changed via the account modal (updates Auth + users table) -->
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">Email Address</label>
-              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm">
-                {{ currentUser?.email || '—' }}
+              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm flex items-center justify-between gap-3">
+                <span class="truncate">{{ currentUser?.email || '—' }}</span>
+                <button
+                  @click="openAccountModal('email')"
+                  class="text-brand text-xs font-semibold hover:underline shrink-0"
+                >
+                  Change
+                </button>
               </div>
             </div>
 
             <!-- Password — always masked, Appwrite does not expose hashed passwords -->
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">Password</label>
-              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-dim text-sm">
-                ••••••••
+              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-dim text-sm flex items-center justify-between gap-3">
+                <span>••••••••</span>
+                <button
+                  @click="openAccountModal('password')"
+                  class="text-brand text-xs font-semibold hover:underline shrink-0"
+                >
+                  Change
+                </button>
               </div>
             </div>
+
+            <!-- Confirmation after a successful email/password change -->
+            <p
+              v-if="accountSuccess"
+              class="col-span-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3"
+            >
+              {{ accountSuccess }}
+            </p>
 
           </div>
 
@@ -597,6 +680,108 @@ async function handleLogout() {
         </div>
       </div>
 
+    </div>
+
+    <!-- ── CHANGE EMAIL / PASSWORD MODAL (own account) ── -->
+    <div
+      v-if="accountModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      @click.self="closeAccountModal"
+    >
+      <form
+        @submit.prevent="submitAccountChange"
+        class="bg-bg-surface border border-white/5 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
+      >
+
+        <!-- Modal header -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-text-primary font-bold text-lg">
+            {{ accountModal === 'email' ? 'Change Email' : 'Change Password' }}
+          </h2>
+          <button
+            type="button"
+            @click="closeAccountModal"
+            class="text-text-muted hover:text-text-primary transition-colors text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-4">
+
+          <!-- New email (email mode only) -->
+          <div v-if="accountModal === 'email'" class="flex flex-col gap-1.5">
+            <label class="text-text-muted text-sm font-medium">New Email Address</label>
+            <input
+              v-model="accountForm.email"
+              type="email"
+              placeholder="your@email.com"
+              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+            />
+          </div>
+
+          <!-- Current password — required by Appwrite for both changes -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-text-muted text-sm font-medium">Current Password</label>
+            <input
+              v-model="accountForm.currentPassword"
+              type="password"
+              placeholder="••••••••"
+              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+            />
+          </div>
+
+          <!-- New password + confirmation (password mode only) -->
+          <template v-if="accountModal === 'password'">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-muted text-sm font-medium">New Password</label>
+              <input
+                v-model="accountForm.newPassword"
+                type="password"
+                placeholder="••••••••"
+                class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+              />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-text-muted text-sm font-medium">Confirm New Password</label>
+              <input
+                v-model="accountForm.confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+              />
+            </div>
+          </template>
+
+        </div>
+
+        <!-- Error: local validation message or the error from Appwrite -->
+        <p
+          v-if="accountFormError || accountError"
+          class="mt-4 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"
+        >
+          {{ accountFormError || accountError }}
+        </p>
+
+        <!-- Modal action buttons -->
+        <div class="flex justify-end gap-3 mt-4">
+          <button
+            type="button"
+            @click="closeAccountModal"
+            class="text-text-muted text-sm font-medium px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            :disabled="accountLoading"
+            class="bg-brand text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-50"
+          >
+            {{ accountLoading ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+
+      </form>
     </div>
 
     <!-- ── EDIT USER MODAL ── -->
