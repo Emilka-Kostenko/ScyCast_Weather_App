@@ -14,7 +14,7 @@ const router = useRouter()
 const { currentUser, isAdmin } = useCurrentUser()
 const { logout } = useLogout()
 const { locations, fetchLocations } = useLocations()
-const { users, loading: usersLoading, fetchUsers } = useUsers()
+const { users, loading: usersLoading, error: usersError, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
 const { deleteUser } = useDeleteUser()
 
@@ -58,6 +58,74 @@ const filteredUsers = computed(() => {
 
   return result
 })
+
+// Edit modal — holds the user being edited, null when closed
+const editingUser = ref(null)
+const editSaving = ref(false)
+const editError = ref('')
+const editForm = ref({ name: '', age: '', role: '' })
+
+// True when the user being edited is the only active admin — locks the Role dropdown
+const editIsLastAdmin = computed(() => {
+  if (!editingUser.value) return false
+  if (editingUser.value.role !== 'admin') return false
+  return users.value.filter(u => u.role === 'admin' && u.status === 'active').length <= 1
+})
+
+// Seed form fields and open modal
+function openEdit(user) {
+  editingUser.value = user
+  editForm.value = {
+    name: user.name || '',
+    age: user.age ?? '',
+    role: user.role || 'user',
+  }
+}
+
+function closeEdit() {
+  editingUser.value = null
+  editSaving.value = false
+  editError.value = ''
+}
+
+// Save the changed fields (name, age, role) to the users collection
+// Email and password are NOT editable here — each user changes their own in Appwrite Auth
+async function saveEdit() {
+  const user = editingUser.value
+  if (!user) return
+
+  editSaving.value = true
+  editError.value = ''
+
+  // Build DB update payload with only fields that changed
+  const dbPayload = {}
+  if (editForm.value.name !== user.name) dbPayload.name = editForm.value.name
+  if (String(editForm.value.age) !== String(user.age ?? '')) dbPayload.age = Number(editForm.value.age)
+  if (editForm.value.role !== user.role) {
+    // Last-admin guard — cannot demote the last active admin
+    if (editIsLastAdmin.value && editForm.value.role !== 'admin') {
+      alert('Cannot demote the last active admin — there must always be at least one.')
+      editSaving.value = false
+      return
+    }
+    dbPayload.role = editForm.value.role
+  }
+
+  // Update DB document if anything changed
+  if (Object.keys(dbPayload).length > 0) {
+    const ok = await updateUser(user.$id, dbPayload)
+    if (!ok) {
+      editError.value = 'Could not save changes to the database. Please try again.'
+      editSaving.value = false
+      return
+    }
+    // Reflect all DB changes in the local list immediately
+    Object.assign(user, dbPayload)
+  }
+
+  editSaving.value = false
+  closeEdit()
+}
 
 // Holds the $id of the user awaiting delete confirmation, null otherwise
 const confirmDeleteId = ref(null)
@@ -384,6 +452,17 @@ async function handleLogout() {
           <p class="text-text-muted text-sm">Loading users...</p>
         </div>
 
+        <!-- Error state — shown when fetchUsers fails -->
+        <div v-else-if="usersError" class="flex flex-col items-center justify-center h-40 gap-3">
+          <p class="text-red-400 text-sm">{{ usersError }}</p>
+          <button
+            @click="fetchUsers"
+            class="text-brand text-sm font-medium hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+
         <!-- Users table -->
         <div v-else class="bg-bg-surface border border-white/5 rounded-2xl overflow-hidden">
           <table class="w-full text-sm">
@@ -464,7 +543,10 @@ async function handleLogout() {
                 <!-- Action buttons — wired up in later steps -->
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-2">
-                    <button class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors">
+                    <button
+                      @click="openEdit(user)"
+                      class="text-text-muted hover:text-text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-white/5 hover:bg-bg-raised transition-colors"
+                    >
                       Edit
                     </button>
                     <button
@@ -516,5 +598,93 @@ async function handleLogout() {
       </div>
 
     </div>
+
+    <!-- ── EDIT USER MODAL ── -->
+    <div
+      v-if="editingUser"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      @click.self="closeEdit"
+    >
+      <div class="bg-bg-surface border border-white/5 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+
+        <!-- Modal header -->
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-text-primary font-bold text-lg">Edit User</h2>
+          <button
+            @click="closeEdit"
+            class="text-text-muted hover:text-text-primary transition-colors text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Form fields -->
+        <div class="flex flex-col gap-4">
+
+          <!-- Full Name -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-text-muted text-sm font-medium">Full Name</label>
+            <input
+              v-model="editForm.name"
+              type="text"
+              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+            />
+          </div>
+
+          <!-- Age -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-text-muted text-sm font-medium">Age</label>
+            <input
+              v-model="editForm.age"
+              type="number"
+              min="5"
+              max="150"
+              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
+            />
+          </div>
+
+          <!-- Role — locked if this is the last active admin -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-text-muted text-sm font-medium">
+              Role
+              <span v-if="editIsLastAdmin" class="text-yellow-400 text-xs ml-1">(last admin — cannot demote)</span>
+            </label>
+            <select
+              v-model="editForm.role"
+              :disabled="editIsLastAdmin"
+              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Error message — shown when the DB update fails -->
+        <p v-if="editError" class="mt-4 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+          {{ editError }}
+        </p>
+
+        <!-- Modal action buttons -->
+        <div class="flex justify-end gap-3 mt-4">
+          <button
+            @click="closeEdit"
+            class="text-text-muted text-sm font-medium px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="saveEdit"
+            :disabled="editSaving"
+            class="bg-brand text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-50"
+          >
+            {{ editSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </template>
