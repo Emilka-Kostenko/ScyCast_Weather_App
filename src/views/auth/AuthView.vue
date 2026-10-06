@@ -3,15 +3,24 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLogin } from '@/composables/auth/useLogin'
 import { useRegister } from '@/composables/auth/useRegister'
+import { useForgotPassword } from '@/composables/auth/useForgotPassword'
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 
 const router = useRouter()
 const { login, loading: loginLoading, error: loginError } = useLogin()
 const { register, loading: registerLoading, error: registerError } = useRegister()
+const { sendResetLink, loading: forgotLoading, error: forgotError, sent: forgotSent } = useForgotPassword()
 const { currentUser } = useCurrentUser()
 
-// Controls which form is shown
+// Controls which form is shown: 'login' | 'register' | 'forgot'
 const activeTab = ref('login')
+
+// Heading and subtitle for each form
+const headings = {
+  login: { title: 'Welcome back', subtitle: 'Sign in to access your weather dashboard' },
+  register: { title: 'Create account', subtitle: 'Join Skycast and track weather in Denmark' },
+  forgot: { title: 'Forgot password?', subtitle: "Enter your email and we'll send you a link to reset it" },
+}
 
 // Separate show/hide toggles for each password field
 const showPassword = ref(false)
@@ -51,6 +60,34 @@ async function handleLogin() {
   if (result.success) {
     router.push(currentUser.value?.role === 'admin' ? '/admin/users' : '/weather')
   }
+}
+
+// ── Forgot Password ──
+const forgotEmail = ref('')
+const forgotEmailError = ref('')
+
+// Opens the forgot-password form, pre-filled with whatever was typed on the sign-in form
+function openForgot() {
+  forgotEmail.value = loginForm.email
+  forgotEmailError.value = ''
+  forgotSent.value = false
+  forgotError.value = null
+  activeTab.value = 'forgot'
+}
+
+async function handleForgot() {
+  forgotEmailError.value = ''
+
+  if (!forgotEmail.value) {
+    forgotEmailError.value = 'Email is required.'
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail.value)) {
+    forgotEmailError.value = 'Please enter a valid email address.'
+    return
+  }
+
+  await sendResetLink(forgotEmail.value)
 }
 
 // ── Sign Up ──
@@ -160,12 +197,10 @@ async function handleRegister() {
       <!-- Heading -->
       <div>
         <h1 class="text-text-primary text-2xl font-bold mb-1">
-          {{ activeTab === 'login' ? 'Welcome back' : 'Create account' }}
+          {{ headings[activeTab].title }}
         </h1>
         <p class="text-text-muted text-sm">
-          {{ activeTab === 'login'
-            ? 'Sign in to access your weather dashboard'
-            : 'Join Skycast and track weather in Denmark' }}
+          {{ headings[activeTab].subtitle }}
         </p>
       </div>
 
@@ -211,6 +246,15 @@ async function handleRegister() {
           <p v-if="loginErrors.password" class="text-status-suspended-text text-xs mt-0.5">
             {{ loginErrors.password }}
           </p>
+
+          <!-- Opens the forgot-password form -->
+          <button
+            type="button"
+            class="self-end text-brand text-xs hover:underline transition cursor-pointer mt-1"
+            @click="openForgot"
+          >
+            Forgot password?
+          </button>
         </div>
 
         <!-- Server error from Appwrite (wrong credentials etc.) -->
@@ -225,6 +269,59 @@ async function handleRegister() {
           class="w-full bg-brand hover:bg-brand/90 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {{ loginLoading ? 'Signing in...' : 'Sign In' }}
+        </button>
+
+      </form>
+
+      <!-- ── Forgot Password Form ── -->
+      <form v-if="activeTab === 'forgot'" @submit.prevent="handleForgot" class="flex flex-col gap-4" novalidate>
+
+        <!-- After sending: neutral confirmation, same for known and unknown emails -->
+        <p
+          v-if="forgotSent"
+          class="text-text-primary text-sm bg-input-bg rounded-xl px-4 py-3"
+        >
+          If an account exists for <span class="font-semibold">{{ forgotEmail }}</span>,
+          we've sent a link to reset the password. Check your inbox (and spam folder).
+        </p>
+
+        <!-- Email field — hidden once the link has been sent -->
+        <div v-else class="flex flex-col gap-1">
+          <label class="text-text-muted text-sm">Email Address</label>
+          <input
+            v-model="forgotEmail"
+            type="email"
+            placeholder="your@email.com"
+            class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+            :class="forgotEmailError ? 'ring-2 ring-status-suspended-text' : ''"
+          />
+          <p v-if="forgotEmailError" class="text-status-suspended-text text-xs mt-0.5">
+            {{ forgotEmailError }}
+          </p>
+        </div>
+
+        <!-- Server error (network problem etc.) -->
+        <p v-if="forgotError" class="text-status-suspended-text text-sm text-center">
+          {{ forgotError }}
+        </p>
+
+        <!-- Submit button — not needed after the link has been sent -->
+        <button
+          v-if="!forgotSent"
+          type="submit"
+          :disabled="forgotLoading"
+          class="w-full bg-brand hover:bg-brand/90 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {{ forgotLoading ? 'Sending...' : 'Send Reset Link' }}
+        </button>
+
+        <!-- Back to the sign-in form -->
+        <button
+          type="button"
+          class="text-text-muted text-sm hover:text-text-primary transition cursor-pointer"
+          @click="activeTab = 'login'"
+        >
+          ← Back to Sign In
         </button>
 
       </form>
