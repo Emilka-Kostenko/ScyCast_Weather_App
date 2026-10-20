@@ -28,7 +28,7 @@ export function useUpdateUser() {
         fields // e.g. { role: 'admin' } or { status: 'suspended' }
       )
       return true
-    } catch (err) {
+    } catch {
       error.value = 'Could not update user. Please try again.'
       return false
     } finally {

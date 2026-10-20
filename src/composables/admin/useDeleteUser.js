@@ -27,7 +27,7 @@ export function useDeleteUser() {
         documentId
       )
       return true
-    } catch (err) {
+    } catch {
       error.value = 'Could not delete user. Please try again.'
       return false
     } finally {

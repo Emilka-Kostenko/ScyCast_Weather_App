@@ -41,7 +41,7 @@ export function useLogin() {
       }
 
       return { success: true }
-    } catch (err) {
+    } catch {
       // Show a friendly error message instead of Appwrite's raw error
       error.value = 'Invalid email or password. Please try again.'
       return { success: false }

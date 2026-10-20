@@ -13,7 +13,7 @@ export function useRemoveLocation() {
     try {
       await databases.deleteDocument(DATABASE_ID, LOCATIONS_COLLECTION_ID, documentId)
       return { success: true }
-    } catch (err) {
+    } catch {
       error.value = 'Could not remove location. Please try again.'
       return { success: false }
     } finally {

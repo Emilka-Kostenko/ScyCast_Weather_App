@@ -24,7 +24,7 @@ export function useWeather() {
       data.currentHourIndex = data.hourly.time.indexOf(currentHourISO)
 
       weather.value = data
-    } catch (err) {
+    } catch {
       error.value = 'Could not load weather data. Please try again.'
     } finally {
       loading.value = false

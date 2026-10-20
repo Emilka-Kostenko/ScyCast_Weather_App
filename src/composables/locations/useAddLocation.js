@@ -26,7 +26,7 @@ export function useAddLocation() {
         ]
       )
       return { success: true, document }
-    } catch (err) {
+    } catch {
       error.value = 'Could not save location. Please try again.'
       return { success: false }
     } finally {

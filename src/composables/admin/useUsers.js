@@ -27,7 +27,7 @@ export function useUsers() {
         USERS_COLLECTION_ID
       )
       users.value = response.documents
-    } catch (err) {
+    } catch {
       error.value = 'Could not load users. Please try again.'
       users.value = []
     } finally {

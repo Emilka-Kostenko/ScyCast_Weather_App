@@ -24,7 +24,7 @@ export function useGeocoding() {
       loading.value = true
       try {
         results.value = await searchCities(query)
-      } catch (err) {
+      } catch {
         error.value = 'Could not load city suggestions. Please try again.'
         results.value = []
       } finally {

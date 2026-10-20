@@ -19,7 +19,7 @@ export function useLocations() {
         [Query.equal('userId', userId)]
       )
       locations.value = response.documents
-    } catch (err) {
+    } catch {
       error.value = 'Could not load your saved locations. Please try again.'
       locations.value = []
     } finally {
