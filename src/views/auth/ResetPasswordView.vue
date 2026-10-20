@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useResetPassword } from '@/composables/auth/useResetPassword'
 
@@ -17,6 +17,13 @@ const linkValid = Boolean(userId && secret)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const done = ref(false)
+
+// Heading and subtitle depend on the state of the page: broken link, success or the form
+const heading = computed(() => {
+  if (!linkValid) return { title: 'Invalid link', subtitle: 'This reset link cannot be used.' }
+  if (done.value) return { title: 'Password updated', subtitle: 'You can now sign in with your new password.' }
+  return { title: 'Set a new password', subtitle: 'Choose a new password for your account.' }
+})
 
 const form = reactive({ password: '', confirmPassword: '' })
 const errors = reactive({ password: '', confirmPassword: '' })
@@ -75,10 +82,10 @@ async function handleSubmit() {
       <!-- Heading -->
       <div>
         <h1 class="text-text-primary text-2xl font-bold mb-1">
-          {{ done ? 'Password updated' : 'Set a new password' }}
+          {{ heading.title }}
         </h1>
         <p class="text-text-muted text-sm">
-          {{ done ? 'You can now sign in with your new password.' : 'Choose a new password for your account.' }}
+          {{ heading.subtitle }}
         </p>
       </div>
 
