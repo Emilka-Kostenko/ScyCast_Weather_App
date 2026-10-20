@@ -18,13 +18,44 @@ const { locations, fetchLocations } = useLocations()
 // The location currently shown — may or may not be in saved locations
 const activeLocation = ref(null)
 
-// Load saved locations and default to the first one (or Copenhagen as fallback)
+// The last viewed city is remembered per user in localStorage, so a page refresh
+// (or coming back later) doesn't reset the weather to the default city
+const lastLocationKey = () => `scycast:lastLocation:${currentUser.value?.userId}`
+
+// Returns the remembered city, or null if none / storage unavailable / data corrupted
+function loadLastLocation() {
+  try {
+    const raw = localStorage.getItem(lastLocationKey())
+    const loc = raw ? JSON.parse(raw) : null
+    // Shape check so broken data can never crash the page
+    if (loc && typeof loc.name === 'string' && Number.isFinite(loc.lat) && Number.isFinite(loc.lon)) {
+      return loc
+    }
+  } catch { /* storage blocked or invalid JSON — fall back to the default */ }
+  return null
+}
+
+function saveLastLocation(location) {
+  try {
+    localStorage.setItem(
+      lastLocationKey(),
+      JSON.stringify({ name: location.name, lat: location.lat, lon: location.lon })
+    )
+  } catch { /* storage blocked — the city just won't be remembered */ }
+}
+
+// Load saved locations, then pick the city to show:
+// last viewed city -> first saved location -> Copenhagen
 async function loadLocations() {
   if (!currentUser.value?.userId) return
 
   await fetchLocations(currentUser.value.userId)
 
-  if (locations.value.length > 0) {
+  const last = loadLastLocation()
+
+  if (last) {
+    activeLocation.value = last
+  } else if (locations.value.length > 0) {
     const first = locations.value[0]
     activeLocation.value = { name: first.label, lat: first.lat, lon: first.lon }
   } else {
@@ -38,6 +69,7 @@ async function loadLocations() {
 // Called when the user picks a location from the dropdown (search or saved list)
 function onSelectLocation(location) {
   activeLocation.value = location
+  saveLastLocation(location)
   fetchWeather(location.lat, location.lon)
 }
 
