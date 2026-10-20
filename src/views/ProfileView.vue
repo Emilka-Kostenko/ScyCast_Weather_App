@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCurrentUser } from '@/composables/auth/useCurrentUser'
 import { useLogout } from '@/composables/auth/useLogout'
 import { useLocations } from '@/composables/locations/useLocations'
@@ -12,13 +12,14 @@ import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { currentUser, isAdmin } = useCurrentUser()
 const { logout } = useLogout()
 const { locations, fetchLocations } = useLocations()
 const { users, loading: usersLoading, error: usersError, fetchUsers } = useUsers()
 const { updateUser } = useUpdateUser()
 const { deleteUser } = useDeleteUser()
-const { changePassword, changeEmail, loading: accountLoading, error: accountError } = useUpdateAccount()
+const { changePassword, loading: accountLoading, error: accountError } = useUpdateAccount()
 
 // Search query — filters the users table by name or email
 const searchQuery = ref('')
@@ -170,17 +171,23 @@ async function handleStatusToggle(user) {
 }
 
 // Load saved locations once the current user is available
+// and load the users table if the page was opened (or refreshed) on the Users tab
 onMounted(() => {
   if (currentUser.value?.userId) fetchLocations(currentUser.value.userId)
+  if (activeTab.value === 'users') fetchUsers()
 })
 
 // Active tab — 'profile' for everyone, 'users' only for admins
-const activeTab = ref('profile')
+// Kept in the URL (?tab=users) so a page refresh stays on the same tab;
+// a non-admin who types ?tab=users falls back to 'profile'
+const activeTab = ref(route.query.tab === 'users' && isAdmin.value ? 'users' : 'profile')
 
 // Lazy-load users the first time the Users tab is opened
 function switchTab(tab) {
   if (tab === 'users' && !isAdmin.value) return
   activeTab.value = tab
+  // replace (not push) so switching tabs doesn't fill the browser history
+  router.replace({ query: tab === 'users' ? { tab: 'users' } : {} })
   if (tab === 'users' && users.value.length === 0) fetchUsers()
 }
 
@@ -226,72 +233,56 @@ async function saveProfile() {
   }
 }
 
-// ── Account security (own email / password) ──
-// Which modal is open: 'email' | 'password' | null
-const accountModal = ref(null)
-const accountForm = ref({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' })
-const accountFormError = ref('')
+// ── Change own password ──
+// Email is intentionally NOT editable — only the password can be changed by the user
+const passwordModalOpen = ref(false)
+const passwordForm = ref({ currentPassword: '', newPassword: '', confirmPassword: '' })
+const passwordFormError = ref('')
 // Green confirmation shown in the profile card after a successful change
-const accountSuccess = ref('')
+const passwordSuccess = ref('')
 // Show/hide toggles for the three password fields in the modal
 const showCurrentPw = ref(false)
 const showNewPw = ref(false)
 const showConfirmPw = ref(false)
 
-function openAccountModal(type) {
-  accountModal.value = type
-  accountForm.value = { email: '', currentPassword: '', newPassword: '', confirmPassword: '' }
+function openPasswordModal() {
+  passwordModalOpen.value = true
+  passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
   showCurrentPw.value = false
   showNewPw.value = false
   showConfirmPw.value = false
-  accountFormError.value = ''
+  passwordFormError.value = ''
   accountError.value = null
-  accountSuccess.value = ''
+  passwordSuccess.value = ''
 }
 
-function closeAccountModal() {
-  accountModal.value = null
+function closePasswordModal() {
+  passwordModalOpen.value = false
 }
 
-// Validates the form, then changes the email or password of the logged-in user
-async function submitAccountChange() {
-  accountFormError.value = ''
-  const f = accountForm.value
-  let ok = false
+// Validates the form, then changes the password of the logged-in user
+async function submitPasswordChange() {
+  passwordFormError.value = ''
+  const f = passwordForm.value
 
-  if (accountModal.value === 'email') {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) {
-      accountFormError.value = 'Please enter a valid email address.'
-      return
-    }
-    if (f.email === currentUser.value?.email) {
-      accountFormError.value = 'This is already your email.'
-      return
-    }
-    if (!f.currentPassword) {
-      accountFormError.value = 'Enter your current password to confirm.'
-      return
-    }
-    ok = await changeEmail(f.email, f.currentPassword)
-    if (ok) accountSuccess.value = 'Email updated. Use the new email next time you sign in.'
-  } else {
-    if (!f.currentPassword) {
-      accountFormError.value = 'Enter your current password.'
-      return
-    }
-    if (f.newPassword.length < 8) {
-      accountFormError.value = 'New password must be at least 8 characters.'
-      return
-    }
-    if (f.newPassword !== f.confirmPassword) {
-      accountFormError.value = 'Passwords do not match.'
-      return
-    }
-    ok = await changePassword(f.currentPassword, f.newPassword)
-    if (ok) accountSuccess.value = 'Password updated.'
+  if (!f.currentPassword) {
+    passwordFormError.value = 'Enter your current password.'
+    return
+  }
+  if (f.newPassword.length < 8) {
+    passwordFormError.value = 'New password must be at least 8 characters.'
+    return
+  }
+  if (f.newPassword !== f.confirmPassword) {
+    passwordFormError.value = 'Passwords do not match.'
+    return
   }
 
-  if (ok) closeAccountModal()
+  const ok = await changePassword(f.currentPassword, f.newPassword)
+  if (ok) {
+    passwordSuccess.value = 'Password updated.'
+    closePasswordModal()
+  }
 }
 
 // Formatted date shown in the header
@@ -442,17 +433,11 @@ async function handleLogout() {
               </div>
             </div>
 
-            <!-- Email — changed via the account modal (updates Auth + users table) -->
+            <!-- Email — read-only, users cannot change their login email -->
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">Email Address</label>
-              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm flex items-center justify-between gap-3">
-                <span class="truncate">{{ currentUser?.email || '—' }}</span>
-                <button
-                  @click="openAccountModal('email')"
-                  class="text-brand text-xs font-semibold hover:underline shrink-0"
-                >
-                  Change
-                </button>
+              <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm">
+                <span class="truncate block">{{ currentUser?.email || '—' }}</span>
               </div>
             </div>
 
@@ -462,7 +447,7 @@ async function handleLogout() {
               <div class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-dim text-sm flex items-center justify-between gap-3">
                 <span>••••••••</span>
                 <button
-                  @click="openAccountModal('password')"
+                  @click="openPasswordModal"
                   class="text-brand text-xs font-semibold hover:underline shrink-0"
                 >
                   Change
@@ -470,12 +455,12 @@ async function handleLogout() {
               </div>
             </div>
 
-            <!-- Confirmation after a successful email/password change -->
+            <!-- Confirmation after a successful password change -->
             <p
-              v-if="accountSuccess"
+              v-if="passwordSuccess"
               class="col-span-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3"
             >
-              {{ accountSuccess }}
+              {{ passwordSuccess }}
             </p>
 
           </div>
@@ -689,25 +674,23 @@ async function handleLogout() {
 
     </div>
 
-    <!-- ── CHANGE EMAIL / PASSWORD MODAL (own account) ── -->
+    <!-- ── CHANGE PASSWORD MODAL (own account) ── -->
     <div
-      v-if="accountModal"
+      v-if="passwordModalOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      @click.self="closeAccountModal"
+      @click.self="closePasswordModal"
     >
       <form
-        @submit.prevent="submitAccountChange"
+        @submit.prevent="submitPasswordChange"
         class="bg-bg-surface border border-white/5 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
       >
 
         <!-- Modal header -->
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-text-primary font-bold text-lg">
-            {{ accountModal === 'email' ? 'Change Email' : 'Change Password' }}
-          </h2>
+          <h2 class="text-text-primary font-bold text-lg">Change Password</h2>
           <button
             type="button"
-            @click="closeAccountModal"
+            @click="closePasswordModal"
             class="text-text-muted hover:text-text-primary transition-colors text-xl leading-none"
           >
             ✕
@@ -716,23 +699,12 @@ async function handleLogout() {
 
         <div class="flex flex-col gap-4">
 
-          <!-- New email (email mode only) -->
-          <div v-if="accountModal === 'email'" class="flex flex-col gap-1.5">
-            <label class="text-text-muted text-sm font-medium">New Email Address</label>
-            <input
-              v-model="accountForm.email"
-              type="email"
-              placeholder="your@email.com"
-              class="bg-bg-raised border border-white/5 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
-            />
-          </div>
-
-          <!-- Current password — required by Appwrite for both changes -->
+          <!-- Current password — required by Appwrite as proof of identity -->
           <div class="flex flex-col gap-1.5">
             <label class="text-text-muted text-sm font-medium">Current Password</label>
             <div class="relative">
               <input
-                v-model="accountForm.currentPassword"
+                v-model="passwordForm.currentPassword"
                 :type="showCurrentPw ? 'text' : 'password'"
                 placeholder="••••••••"
                 class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
@@ -747,13 +719,13 @@ async function handleLogout() {
             </div>
           </div>
 
-          <!-- New password + confirmation (password mode only) -->
-          <template v-if="accountModal === 'password'">
+          <!-- New password + confirmation -->
+          <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-1.5">
               <label class="text-text-muted text-sm font-medium">New Password</label>
               <div class="relative">
                 <input
-                  v-model="accountForm.newPassword"
+                  v-model="passwordForm.newPassword"
                   :type="showNewPw ? 'text' : 'password'"
                   placeholder="••••••••"
                   class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
@@ -771,7 +743,7 @@ async function handleLogout() {
               <label class="text-text-muted text-sm font-medium">Confirm New Password</label>
               <div class="relative">
                 <input
-                  v-model="accountForm.confirmPassword"
+                  v-model="passwordForm.confirmPassword"
                   :type="showConfirmPw ? 'text' : 'password'"
                   placeholder="••••••••"
                   class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 pr-16 text-text-primary text-sm outline-none focus:border-brand/40 transition-colors"
@@ -785,23 +757,23 @@ async function handleLogout() {
                 </button>
               </div>
             </div>
-          </template>
+          </div>
 
         </div>
 
         <!-- Error: local validation message or the error from Appwrite -->
         <p
-          v-if="accountFormError || accountError"
+          v-if="passwordFormError || accountError"
           class="mt-4 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3"
         >
-          {{ accountFormError || accountError }}
+          {{ passwordFormError || accountError }}
         </p>
 
         <!-- Modal action buttons -->
         <div class="flex justify-end gap-3 mt-4">
           <button
             type="button"
-            @click="closeAccountModal"
+            @click="closePasswordModal"
             class="text-text-muted text-sm font-medium px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-colors"
           >
             Cancel
