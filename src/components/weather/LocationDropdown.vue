@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGeocoding } from '@/composables/geocoding/useGeocoding'
 import { useAddLocation } from '@/composables/locations/useAddLocation'
 import { useRemoveLocation } from '@/composables/locations/useRemoveLocation'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const props = defineProps({
   activeLocation: Object, // { name, lat, lon } — currently viewed location
@@ -92,7 +93,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 
     <!-- Trigger row — shows active city, save toggle, and open/close chevron -->
     <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/12 bg-white/8 backdrop-blur-sm w-full">
-      <span class="text-base">📍</span>
+      <AppIcon name="location-pin" class="text-text-primary text-lg shrink-0" />
 
       <!-- City name button — clicking it opens/closes the dropdown -->
       <button
@@ -102,14 +103,14 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
         {{ activeLocation?.name ?? 'Select a location' }}
       </button>
 
-      <!-- Bookmark toggle — save or unsave the active location -->
+      <!-- Save / remove toggle — save or unsave the active location -->
       <button
         v-if="activeLocation"
         @click.stop="toggleSave"
-        class="text-lg leading-none transition-opacity hover:opacity-80"
+        class="text-text-primary text-lg leading-none transition-opacity hover:opacity-80"
         :title="isSaved ? 'Remove from saved' : 'Save location'"
       >
-        {{ isSaved ? '🔖' : '🏷️' }}
+        <AppIcon :name="isSaved ? 'remove-location' : 'save-location'" />
       </button>
 
       <!-- Chevron — rotates when open -->
@@ -128,7 +129,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 
       <!-- Search input row -->
       <div class="flex items-center gap-2 px-4 py-3 border-b border-white/10">
-        <span class="text-text-muted text-sm">🔍</span>
+        <AppIcon name="search" class="text-text-muted text-base shrink-0" />
         <input
           v-model="query"
           @input="onInput"
@@ -152,7 +153,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
           @click="selectCity(city)"
           class="flex items-center gap-3 w-full px-4 py-3 text-left text-text-primary text-sm bg-white/5 hover:bg-white/12 transition-colors border-b border-white/8 last:border-0"
         >
-          <span>📍</span>
+          <AppIcon name="location-pin" class="text-base shrink-0" />
           <span class="truncate">{{ city.name }}</span>
         </button>
       </div>
@@ -174,7 +175,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
           class="flex items-center gap-3 w-full px-4 py-3 text-left text-sm hover:bg-white/8 transition-colors border-b border-white/8 last:border-0"
           :class="activeLocation?.lat === loc.lat ? 'text-brand font-medium' : 'text-text-primary'"
         >
-          <span>📍</span>
+          <AppIcon name="location-pin" class="text-base shrink-0" />
           <span class="truncate">{{ loc.label }}</span>
         </button>
       </div>

@@ -10,6 +10,7 @@ import { useDeleteUser } from '@/composables/admin/useDeleteUser'
 import { useUpdateAccount } from '@/composables/auth/useUpdateAccount'
 import { databases, DATABASE_ID, USERS_COLLECTION_ID } from '@/services/appwrite'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -476,8 +477,9 @@ async function handleLogout() {
                 class="w-full bg-bg-raised border border-white/5 rounded-xl px-4 py-3 flex items-center justify-between text-sm transition-colors"
                 :class="locationsOpen ? 'border-brand/40' : 'hover:border-white/10'"
               >
-                <span class="text-text-primary">
-                  {{ locations.length ? `📍 ${locations[0].label}` : 'No saved locations yet.' }}
+                <span class="text-text-primary flex items-center gap-2">
+                  <AppIcon v-if="locations.length" name="location-pin" class="text-base shrink-0" />
+                  {{ locations.length ? locations[0].label : 'No saved locations yet.' }}
                 </span>
                 <!-- Chevron rotates when open -->
                 <svg
@@ -497,9 +499,10 @@ async function handleLogout() {
                 <div
                   v-for="loc in locations"
                   :key="loc.$id"
-                  class="px-4 py-3 text-text-primary text-sm border-b border-white/5 last:border-0 hover:bg-bg-raised transition-colors"
+                  class="flex items-center gap-2 px-4 py-3 text-text-primary text-sm border-b border-white/5 last:border-0 hover:bg-bg-raised transition-colors"
                 >
-                  📍 {{ loc.label }}
+                  <AppIcon name="location-pin" class="text-base shrink-0" />
+                  {{ loc.label }}
                 </div>
               </div>
             </div>
@@ -513,7 +516,7 @@ async function handleLogout() {
 
         <!-- Search bar -->
         <div class="mb-4 relative">
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+          <AppIcon name="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-base" />
           <input
             v-model="searchQuery"
             type="text"

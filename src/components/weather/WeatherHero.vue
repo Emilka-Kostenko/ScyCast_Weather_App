@@ -1,5 +1,6 @@
 <script setup>
 import StatCard from './StatCard.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 import { useWeatherDescription } from '@/composables/weather/useWeatherDescription'
 import { computed } from 'vue'
 
@@ -19,7 +20,7 @@ const stats = computed(() => {
   const c = props.weather.current
   return [
     {
-      icon: '🌡️',
+      icon: 'thermometer',
       label: 'Feels Like',
       value: `${Math.round(c.apparent_temperature)}°`,
       subtext: c.apparent_temperature > c.temperature_2m
@@ -27,19 +28,19 @@ const stats = computed(() => {
         : 'Feels cooler than the actual temperature',
     },
     {
-      icon: '💧',
+      icon: 'precipitation',
       label: 'Precipitation',
       value: `${c.precipitation} mm`,
       subtext: 'In the last hour',
     },
     {
-      icon: '👁️',
+      icon: 'visibility',
       label: 'Visibility',
       value: `${props.weather.current.visibility_km} km`,
       subtext: null,
     },
     {
-      icon: '💦',
+      icon: 'humidity',
       label: 'Humidity',
       value: `${c.relative_humidity_2m}%`,
       subtext: null,
@@ -72,7 +73,7 @@ const stats = computed(() => {
       <!-- Location button — slot so WeatherView can drop in LocationDropdown -->
       <slot name="location">
         <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/12 bg-white/8 backdrop-blur-sm w-full">
-          <span>📍</span>
+          <AppIcon name="location-pin" class="text-text-primary text-lg shrink-0" />
           <span class="text-text-primary text-sm font-medium flex-1">{{ locationName ?? 'Select a location' }}</span>
           <span class="text-text-muted text-xs">▾</span>
         </div>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const props = defineProps({
   weather: Object, // full Open-Meteo response from useWeather
@@ -27,7 +28,7 @@ function degreesToLabel(deg) {
 
     <!-- Header -->
     <div class="flex items-center gap-2">
-      <span class="text-text-muted text-xs">🌬️</span>
+      <AppIcon name="wind" class="text-text-muted text-sm shrink-0" />
       <span class="text-text-muted text-xs font-semibold uppercase tracking-[1.2px]">Wind</span>
     </div>
 

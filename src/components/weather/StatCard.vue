@@ -1,6 +1,8 @@
 <script setup>
+import AppIcon from '@/components/icons/AppIcon.vue'
+
 defineProps({
-  icon: String,    // emoji icon
+  icon: String,    // AppIcon name, e.g. "thermometer"
   label: String,   // e.g. "Feels Like"
   value: String,   // main value e.g. "30°"
   subtext: String, // optional helper text below the value
@@ -12,7 +14,7 @@ defineProps({
 
     <!-- Icon + label -->
     <div class="flex items-center gap-1.5">
-      <span class="text-sm leading-none">{{ icon }}</span>
+      <AppIcon :name="icon" class="text-text-muted text-base shrink-0" />
       <span class="text-text-muted text-xs font-semibold uppercase tracking-[1.2px]">{{ label }}</span>
     </div>
 
