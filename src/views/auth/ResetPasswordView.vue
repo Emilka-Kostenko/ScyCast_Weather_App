@@ -60,7 +60,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg-base flex items-center justify-center relative px-4 py-8">
+  <div class="min-h-dvh bg-bg-base flex items-center justify-center relative px-4 py-8">
 
     <!-- Subtle radial glow -->
     <div
@@ -125,12 +125,12 @@ async function handleSubmit() {
               v-model="form.password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="errors.password ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              class="absolute right-0 top-0 h-full px-4 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
               @click="showPassword = !showPassword"
             >
               {{ showPassword ? 'Hide' : 'Show' }}
@@ -149,12 +149,12 @@ async function handleSubmit() {
               v-model="form.confirmPassword"
               :type="showConfirmPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="errors.confirmPassword ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              class="absolute right-0 top-0 h-full px-4 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
               @click="showConfirmPassword = !showConfirmPassword"
             >
               {{ showConfirmPassword ? 'Hide' : 'Show' }}

@@ -152,7 +152,7 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg-base flex items-center justify-center relative px-4 py-8">
+  <div class="min-h-dvh bg-bg-base flex items-center justify-center relative px-4 py-8">
 
     <!-- Subtle radial glow -->
     <div
@@ -176,7 +176,7 @@ async function handleRegister() {
       <div class="flex gap-1 p-1 rounded-xl bg-input-bg">
         <button
           :class="[
-            'flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer',
+            'flex-1 py-3 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer',
             activeTab === 'login' ? 'bg-brand text-white font-semibold' : 'text-text-muted hover:text-text-primary'
           ]"
           @click="activeTab = 'login'"
@@ -185,7 +185,7 @@ async function handleRegister() {
         </button>
         <button
           :class="[
-            'flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer',
+            'flex-1 py-3 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer',
             activeTab === 'register' ? 'bg-brand text-white font-semibold' : 'text-text-muted hover:text-text-primary'
           ]"
           @click="activeTab = 'register'"
@@ -214,7 +214,7 @@ async function handleRegister() {
             v-model="loginForm.email"
             type="email"
             placeholder="your@email.com"
-            class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+            class="w-full rounded-xl px-4 py-3 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
             :class="loginErrors.email ? 'ring-2 ring-status-suspended-text' : ''"
           />
           <!-- Inline error shown under the field -->
@@ -231,13 +231,13 @@ async function handleRegister() {
               v-model="loginForm.password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="loginErrors.password ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <!-- Toggle show/hide -->
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              class="absolute right-0 top-0 h-full px-4 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
               @click="showPassword = !showPassword"
             >
               {{ showPassword ? 'Hide' : 'Show' }}
@@ -250,7 +250,7 @@ async function handleRegister() {
           <!-- Opens the forgot-password form -->
           <button
             type="button"
-            class="self-end text-brand text-xs hover:underline transition cursor-pointer mt-1"
+            class="self-end text-brand text-xs hover:underline transition cursor-pointer py-3.5 px-1"
             @click="openForgot"
           >
             Forgot password?
@@ -279,7 +279,7 @@ async function handleRegister() {
         <!-- After sending: neutral confirmation, same for known and unknown emails -->
         <p
           v-if="forgotSent"
-          class="text-text-primary text-sm bg-input-bg rounded-xl px-4 py-3"
+          class="text-text-primary text-base sm:text-sm bg-input-bg rounded-xl px-4 py-3"
         >
           If an account exists for <span class="font-semibold">{{ forgotEmail }}</span>,
           we've sent a link to reset the password. Check your inbox (and spam folder).
@@ -292,7 +292,7 @@ async function handleRegister() {
             v-model="forgotEmail"
             type="email"
             placeholder="your@email.com"
-            class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+            class="w-full rounded-xl px-4 py-3 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
             :class="forgotEmailError ? 'ring-2 ring-status-suspended-text' : ''"
           />
           <p v-if="forgotEmailError" class="text-status-suspended-text text-xs mt-0.5">
@@ -318,7 +318,7 @@ async function handleRegister() {
         <!-- Back to the sign-in form -->
         <button
           type="button"
-          class="text-text-muted text-sm hover:text-text-primary transition cursor-pointer"
+          class="text-text-muted text-sm hover:text-text-primary transition cursor-pointer py-3"
           @click="activeTab = 'login'"
         >
           ← Back to Sign In
@@ -338,7 +338,7 @@ async function handleRegister() {
               v-model="registerForm.name"
               type="text"
               placeholder="Alex Rawles"
-              class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="registerErrors.name ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <p v-if="registerErrors.name" class="text-status-suspended-text text-xs mt-0.5">
@@ -354,7 +354,7 @@ async function handleRegister() {
               placeholder="25"
               min="1"
               max="120"
-              class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="registerErrors.age ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <p v-if="registerErrors.age" class="text-status-suspended-text text-xs mt-0.5">
@@ -371,7 +371,7 @@ async function handleRegister() {
             v-model="registerForm.email"
             type="email"
             placeholder="your@email.com"
-            class="w-full rounded-xl px-4 py-3 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+            class="w-full rounded-xl px-4 py-3 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
             :class="registerErrors.email ? 'ring-2 ring-status-suspended-text' : ''"
           />
           <p v-if="registerErrors.email" class="text-status-suspended-text text-xs mt-0.5">
@@ -387,12 +387,12 @@ async function handleRegister() {
               v-model="registerForm.password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="registerErrors.password ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              class="absolute right-0 top-0 h-full px-4 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
               @click="showPassword = !showPassword"
             >
               {{ showPassword ? 'Hide' : 'Show' }}
@@ -411,12 +411,12 @@ async function handleRegister() {
               v-model="registerForm.confirmPassword"
               :type="showConfirmPassword ? 'text' : 'password'"
               placeholder="••••••••"
-              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
+              class="w-full rounded-xl px-4 py-3 pr-16 text-text-primary text-base sm:text-sm bg-input-bg placeholder:text-text-dim outline-none focus:ring-2 focus:ring-brand transition"
               :class="registerErrors.confirmPassword ? 'ring-2 ring-status-suspended-text' : ''"
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
+              class="absolute right-0 top-0 h-full px-4 text-text-muted text-xs hover:text-text-primary transition cursor-pointer"
               @click="showConfirmPassword = !showConfirmPassword"
             >
               {{ showConfirmPassword ? 'Hide' : 'Show' }}
