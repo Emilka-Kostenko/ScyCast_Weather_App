@@ -50,7 +50,7 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <div class="relative flex flex-col gap-4 h-full p-6 overflow-hidden">
+  <div class="relative flex flex-col gap-4 h-full p-4 sm:p-6 overflow-hidden">
 
     <!-- Background image -->
     <img
@@ -79,8 +79,9 @@ const stats = computed(() => {
         </div>
       </slot>
 
-      <!-- Temperature + condition label + description (vertically centered) -->
-      <div class="flex flex-col items-center justify-center flex-1 gap-0">
+      <!-- Temperature + condition label + description (vertically centered)
+           py-8 gives it room when the panel is stacked and no longer fills the screen height -->
+      <div class="flex flex-col items-center justify-center flex-1 gap-0 py-8 xl:py-0">
         <p class="text-text-primary font-bold text-[96px] leading-none tracking-[-2px]">
           {{ weather ? `${Math.round(weather.current.temperature_2m)}°` : '--' }}
         </p>
@@ -92,8 +93,9 @@ const stats = computed(() => {
         </p>
       </div>
 
-      <!-- 2×2 stat cards grid -->
-      <div class="grid grid-cols-2 gap-3">
+      <!-- Stat cards: 2×2 on phones and tablets, one row of four on wide stacked layouts (lg),
+           2×2 again in the narrow left panel on desktop (xl) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 gap-3">
         <StatCard
           v-for="stat in stats"
           :key="stat.label"

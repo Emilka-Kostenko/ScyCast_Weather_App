@@ -84,7 +84,7 @@ onMounted(loadLocations)
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg-base flex">
+  <div class="min-h-dvh bg-bg-base flex">
 
     <AppSidebar />
 
@@ -94,11 +94,14 @@ onMounted(loadLocations)
       <p v-else-if="error" class="text-status-suspended-text">{{ error }}</p>
     </div>
 
-    <!-- Weather content -->
-    <div v-else-if="weather" class="flex gap-4 p-6 h-screen flex-1">
+    <!-- Weather content
+         Below xl: one column, the page scrolls (pb-24 leaves room for the bottom nav bar on phones).
+         From xl up: two columns filling the screen height. min-w-0 lets the scrolling forecast
+         strips shrink instead of stretching the whole page. -->
+    <div v-else-if="weather" class="flex flex-col xl:flex-row gap-4 p-4 pb-24 md:p-6 xl:h-screen flex-1 min-w-0">
 
       <!-- Left panel — hero with LocationDropdown injected into the location slot -->
-      <div class="h-full w-[436px] rounded-2xl overflow-hidden shrink-0">
+      <div class="w-full xl:w-[436px] xl:h-full rounded-2xl overflow-hidden xl:shrink-0">
         <WeatherHero :weather="weather">
           <template #location>
             <LocationDropdown
@@ -113,12 +116,13 @@ onMounted(loadLocations)
       </div>
 
       <!-- Right panel -->
-      <div class="flex flex-col gap-4 flex-1">
+      <div class="flex flex-col gap-4 flex-1 min-w-0">
         <HourlyForecast :weather="weather" />
         <TenDayForecast :weather="weather" />
-        <div class="flex gap-4">
-          <UvIndexCard :weather="weather" class="flex-1" />
-          <WindCard :weather="weather" class="flex-1" />
+        <!-- UV and wind: stacked on phones, side by side from md up -->
+        <div class="flex flex-col md:flex-row gap-4">
+          <UvIndexCard :weather="weather" class="md:flex-1" />
+          <WindCard :weather="weather" class="md:flex-1" />
         </div>
       </div>
 
